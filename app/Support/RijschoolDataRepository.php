@@ -3,19 +3,25 @@
 namespace App\Support;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class RijschoolDataRepository
 {
     private const SESSION_KEY = 'rijschool_data';
+    private const PER_PAGE = 4;
 
-    public function allInstructeurs(): Collection
+    public function paginateInstructeurs(int $perPage = self::PER_PAGE): LengthAwarePaginator
     {
-        return collect($this->data()['instructeurs'])
+        return $this->paginateCollection(
+            collect($this->data()['instructeurs'])
             ->map(fn (array $instructeur): object => $this->enrichInstructeur($instructeur))
             ->sortByDesc('AantalSterren')
-            ->values();
+                ->values(),
+            $perPage,
+            'page'
+        );
     }
 
     public function getInstructeur(int $instructeurId): ?object
@@ -39,22 +45,30 @@ class RijschoolDataRepository
         return $voertuig ? $this->enrichVoertuig($voertuig) : null;
     }
 
-    public function getVoertuigenVanInstructeur(int $instructeurId): Collection
+    public function paginateVoertuigenVanInstructeur(int $instructeurId, int $perPage = self::PER_PAGE): LengthAwarePaginator
     {
-        return collect($this->data()['voertuigen'])
+        return $this->paginateCollection(
+            collect($this->data()['voertuigen'])
             ->filter(fn (array $voertuig): bool => $this->voertuigHeeftInstructeur($voertuig['Id'], $instructeurId))
             ->map(fn (array $voertuig): object => $this->enrichVoertuig($voertuig))
             ->sortBy(fn (object $voertuig): string => $voertuig->Rijbewijscategorie . ' ' . $voertuig->Type)
-            ->values();
+                ->values(),
+            $perPage,
+            'page'
+        );
     }
 
-    public function getBeschikbareVoertuigen(): Collection
+    public function paginateBeschikbareVoertuigen(int $perPage = self::PER_PAGE): LengthAwarePaginator
     {
-        return collect($this->data()['voertuigen'])
+        return $this->paginateCollection(
+            collect($this->data()['voertuigen'])
             ->filter(fn (array $voertuig): bool => $this->voertuigInstructeurId($voertuig['Id']) === null)
             ->map(fn (array $voertuig): object => $this->enrichVoertuig($voertuig))
             ->sortBy(fn (object $voertuig): string => $voertuig->Rijbewijscategorie . ' ' . $voertuig->Type)
-            ->values();
+                ->values(),
+            $perPage,
+            'page'
+        );
     }
 
     public function assignVoertuigToInstructeur(int $voertuigId, int $instructeurId): ?object
@@ -290,5 +304,23 @@ class RijschoolDataRepository
     private function formatNaam(string $voornaam, ?string $tussenvoegsel, string $achternaam): string
     {
         return trim(implode(' ', array_filter([$voornaam, $tussenvoegsel, $achternaam], fn (?string $part): bool => filled($part))));
+    }
+
+    private function paginateCollection(Collection $items, int $perPage, string $pageName): LengthAwarePaginator
+    {
+        $currentPage = LengthAwarePaginator::resolveCurrentPage($pageName);
+        $total = $items->count();
+        $results = $items->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $results,
+            $total,
+            $perPage,
+            $currentPage,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+                'pageName' => $pageName,
+            ]
+        );
     }
 }

@@ -65,5 +65,9 @@
                 </table>
             </div>
         </div>
+
+        <div>
+            {{ $producten->links() }}
+        </div>
     </div>
 </x-layouts::app>

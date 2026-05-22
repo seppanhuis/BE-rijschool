@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -16,7 +17,7 @@ class ProductController extends Controller
 
     public function index()
     {
-        $producten = $this->productModel->sp_GetAllProducten();
+        $producten = $this->paginateArray($this->productModel->sp_GetAllProducten(), 4);
 
         return view('producten.index', [
             'title' => 'Producten',
@@ -94,5 +95,22 @@ class ProductController extends Controller
 
         return redirect()->route('producten.index')
             ->with('error', 'Product is niet verwijderd');
+    }
+
+    private function paginateArray(array $items, int $perPage): LengthAwarePaginator
+    {
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $collection = collect($items);
+        $results = $collection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $results,
+            $collection->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+            ]
+        );
     }
 }

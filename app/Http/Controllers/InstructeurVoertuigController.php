@@ -16,10 +16,12 @@ class InstructeurVoertuigController extends Controller
 
     public function index(): View
     {
+        $instructeurs = $this->repository->paginateInstructeurs(4);
+
         return view('dashboard', [
             'title' => 'Instructeurs in dienst',
-            'instructeurs' => $this->repository->allInstructeurs(),
-            'aantalInstructeurs' => $this->repository->allInstructeurs()->count(),
+            'instructeurs' => $instructeurs,
+            'aantalInstructeurs' => $instructeurs->total(),
         ]);
     }
 
@@ -31,7 +33,7 @@ class InstructeurVoertuigController extends Controller
         return view('instructeurs.voertuigen', [
             'title' => 'Door Instructeur gebruikte voertuigen',
             'instructeur' => $instructeurModel,
-            'voertuigen' => $this->repository->getVoertuigenVanInstructeur($instructeur),
+            'voertuigen' => $this->repository->paginateVoertuigenVanInstructeur($instructeur, 4),
         ]);
     }
 
@@ -43,7 +45,7 @@ class InstructeurVoertuigController extends Controller
         return view('instructeurs.beschikbare-voertuigen', [
             'title' => 'Alle beschikbare voertuigen',
             'instructeur' => $instructeurModel,
-            'voertuigen' => $this->repository->getBeschikbareVoertuigen(),
+            'voertuigen' => $this->repository->paginateBeschikbareVoertuigen(4),
         ]);
     }
 

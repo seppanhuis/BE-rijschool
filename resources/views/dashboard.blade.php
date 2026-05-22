@@ -49,5 +49,9 @@
                 </table>
             </div>
         </div>
+
+        <div>
+            {{ $instructeurs->links() }}
+        </div>
     </div>
 </x-layouts::app>

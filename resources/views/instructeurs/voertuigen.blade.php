@@ -61,5 +61,9 @@
                 </table>
             </div>
         </div>
+
+        <div>
+            {{ $voertuigen->links() }}
+        </div>
     </div>
 </x-layouts::app>
